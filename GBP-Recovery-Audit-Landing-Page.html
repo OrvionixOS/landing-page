@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GBP Recovery Audit - Find the Drop, Fix the Listing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&amp;family=DM+Mono:wght@400;500&amp;family=DM+Sans:wght@300;400;500;700&amp;display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0e0e0e;
+    --ink-soft: #1b1b1a;
+    --ink-lift: #24221f;
+    --paper: #f4f0e8;
+    --paper-dim: #e7dfd0;
+    --amber: #d4882a;
+    --amber-dim: #a96820;
+    --amber-pale: #f7e4c3;
+    --red: #c54a3f;
+    --green: #82a85d;
+    --muted: #8a8172;
+    --rule: #33302b;
+    --white: #ffffff;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: "DM Sans", sans-serif;
+    font-weight: 300;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  .display {
+    font-family: "Playfair Display", Georgia, serif;
+    font-weight: 900;
+    line-height: 1.05;
+  }
+
+  .serif { font-family: "Playfair Display", Georgia, serif; }
+  .mono { font-family: "DM Mono", monospace; }
+  .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  .container--narrow { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+
+  nav {
+    border-bottom: 1px solid var(--rule);
+    padding: 18px 0;
+    position: sticky;
+    top: 0;
+    background: rgba(14, 14, 14, 0.94);
+    backdrop-filter: blur(16px);
+    z-index: 100;
+  }
+
+  nav .inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .nav-logo {
+    font-family: "DM Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .nav-logo span { color: var(--amber); }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+  }
+
+  .nav-links a {
+    color: var(--muted);
+    font-family: "DM Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .nav-cta {
+    background: var(--amber);
+    color: var(--ink) !important;
+    font-weight: 500;
+    padding: 10px 18px;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+
+  .nav-cta:hover { background: var(--amber-dim); }
+
+  .section-label,
+  .hero-eyebrow,
+  .cta-eyebrow {
+    align-items: center;
+    color: var(--amber);
+    display: flex;
+    font-family: "DM Mono", monospace;
+    font-size: 10px;
+    gap: 12px;
+    letter-spacing: 0.2em;
+    margin-bottom: 42px;
+    text-transform: uppercase;
+  }
+
+  .section-label::before,
+  .hero-eyebrow::before {
+    background: var(--amber);
+    content: "";
+    display: block;
+    height: 1px;
+    width: 32px;
+  }
+
+  .hero {
+    padding: 92px 0 76px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    background:
+      linear-gradient(90deg, rgba(212, 136, 42, 0.12) 1px, transparent 1px),
+      linear-gradient(rgba(212, 136, 42, 0.08) 1px, transparent 1px);
+    background-size: 72px 72px;
+    content: "";
+    inset: 0;
+    opacity: 0.22;
+    pointer-events: none;
+    position: absolute;
+    mask-image: linear-gradient(90deg, transparent, #000 35%, transparent 92%);
+  }
+
+  .hero .container { position: relative; z-index: 1; }
+
+  .hero-headline {
+    font-size: clamp(44px, 7vw, 84px);
+    margin-bottom: 30px;
+    max-width: 880px;
+  }
+
+  .hero-headline em { color: var(--amber); font-style: italic; }
+
+  .hero-sub {
+    color: var(--paper-dim);
+    font-size: 18px;
+    line-height: 1.7;
+    margin-bottom: 42px;
+    max-width: 650px;
+  }
+
+  .hero-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-large {
+    display: inline-block;
+    font-family: "DM Mono", monospace;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    min-height: 52px;
+    padding: 16px 28px;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .btn-primary,
+  .btn-large {
+    background: var(--amber);
+    color: var(--ink);
+  }
+
+  .btn-primary:hover,
+  .btn-large:hover { background: var(--amber-dim); }
+
+  .btn-secondary {
+    border: 1px solid var(--rule);
+    color: var(--paper);
+  }
+
+  .btn-secondary:hover { border-color: var(--amber); color: var(--amber); }
+
+  .hero-proof {
+    color: var(--muted);
+    font-family: "DM Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    max-width: 360px;
+  }
+
+  .ticker {
+    background: var(--ink-soft);
+    border-bottom: 1px solid var(--rule);
+    border-top: 1px solid var(--rule);
+    overflow: hidden;
+    padding: 16px 0;
+  }
+
+  .ticker-inner {
+    animation: ticker-scroll 34s linear infinite;
+    display: flex;
+    gap: 58px;
+    width: max-content;
+  }
+
+  .ticker-item {
+    align-items: center;
+    color: var(--muted);
+    display: flex;
+    font-family: "DM Mono", monospace;
+    font-size: 10px;
+    gap: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .ticker-item span { color: var(--amber); }
+
+  @keyframes ticker-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  section { border-bottom: 1px solid var(--rule); }
+
+  .diagnosis,
+  .protocol,
+  .pricing,
+  .process,
+  .math,
+  .who { padding: 96px 0; }
+
+  .diagnosis-grid,
+  .protocol-grid,
+  .math-inner {
+    display: grid;
+    gap: 70px;
+    grid-template-columns: 0.95fr 1.05fr;
+  }
+
+  h2 {
+    font-size: clamp(30px, 4vw, 46px);
+    margin-bottom: 22px;
+  }
+
+  .lead {
+    color: var(--paper-dim);
+    font-size: 16px;
+    line-height: 1.75;
+    margin-bottom: 16px;
+  }
+
+  .muted { color: var(--muted); }
+
+  .reason,
+  .root-cause {
+    border-bottom: 1px solid var(--rule);
+    padding: 24px 0;
+  }
+
+  .reason:first-child,
+  .root-cause:first-child { padding-top: 0; }
+
+  .reason:last-child,
+  .root-cause:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .reason-num,
+  .root-num,
+  .card-kicker {
+    color: var(--amber);
+    font-family: "DM Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .reason h3,
+  .root-cause h3,
+  .step h3,
+  .who-card h3 {
+    color: var(--paper);
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 19px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .reason p,
+  .root-cause p,
+  .step p,
+  .who-card p {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  strong { color: var(--paper); font-weight: 500; }
+
+  .protocol { background: var(--ink-soft); }
+
+  .protocol-card {
+    border: 1px solid var(--rule);
+    padding: 30px;
+  }
+
+  .protocol-list {
+    display: grid;
+    gap: 14px;
+    list-style: none;
+    margin-top: 26px;
+  }
+
+  .protocol-list li {
+    align-items: flex-start;
+    border-top: 1px solid var(--rule);
+    color: var(--paper-dim);
+    display: flex;
+    gap: 14px;
+    padding-top: 14px;
+  }
+
+  .protocol-list li::before {
+    color: var(--amber);
+    content: ">";
+    flex: 0 0 auto;
+    font-family: "DM Mono", monospace;
+  }
+
+  .pricing-head {
+    align-items: end;
+    display: flex;
+    gap: 40px;
+    justify-content: space-between;
+    margin-bottom: 48px;
+  }
+
+  .pricing-head p {
+    color: var(--paper-dim);
+    max-width: 430px;
+  }
+
+  .pricing-grid {
+    align-items: stretch;
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .price-card {
+    background: var(--ink);
+    border: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding: 28px;
+    position: relative;
+  }
+
+  .price-card.featured {
+    background: var(--ink-lift);
+    border-color: var(--amber);
+    transform: translateY(-12px);
+  }
+
+  .badge {
+    background: var(--amber);
+    color: var(--ink);
+    font-family: "DM Mono", monospace;
+    font-size: 10px;
+    font-weight: 500;
+    left: 24px;
+    letter-spacing: 0.13em;
+    padding: 7px 10px;
+    position: absolute;
+    text-transform: uppercase;
+    top: -15px;
+  }
+
+  .price-card h3 {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 24px;
+    line-height: 1.15;
+    margin: 18px 0 12px;
+  }
+
+  .price {
+    color: var(--amber);
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: clamp(38px, 5vw, 56px);
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .price span {
+    color: var(--muted);
+    font-family: "DM Mono", monospace;
+    font-size: 13px;
+    font-weight: 400;
+  }
+
+  .price-summary {
+    color: var(--paper-dim);
+    font-size: 14px;
+    min-height: 92px;
+  }
+
+  .feature-list {
+    border-top: 1px solid var(--rule);
+    list-style: none;
+    margin: 22px 0;
+    padding-top: 16px;
+  }
+
+  .feature-list li {
+    color: var(--paper-dim);
+    display: flex;
+    font-size: 14px;
+    gap: 10px;
+    line-height: 1.45;
+    padding: 8px 0;
+  }
+
+  .feature-list li::before {
+    color: var(--green);
+    content: "\2713";
+    flex: 0 0 auto;
+    font-family: "DM Mono", monospace;
+  }
+
+  .feature-list li.no { color: var(--muted); }
+  .feature-list li.no::before { color: var(--rule); content: "-"; }
+
+  .card-note {
+    border-top: 1px solid var(--rule);
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: auto;
+    padding-top: 16px;
+  }
+
+  .process-steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin-top: 54px;
+  }
+
+  .step {
+    border-right: 1px solid var(--rule);
+    padding: 0 28px 0 0;
+  }
+
+  .step + .step { padding-left: 28px; }
+  .step:last-child { border-right: none; }
+
+  .step-num {
+    color: var(--rule);
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 58px;
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 18px;
+  }
+
+  .step:hover .step-num { color: rgba(212, 136, 42, 0.38); }
+
+  .step-day {
+    color: var(--amber);
+    font-family: "DM Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+
+  .math { background: var(--ink-soft); }
+
+  .math-calc {
+    background: var(--ink);
+    border: 1px solid var(--rule);
+    padding: 34px;
+  }
+
+  .calc-row,
+  .calc-total {
+    align-items: baseline;
+    display: flex;
+    font-family: "DM Mono", monospace;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .calc-row {
+    border-bottom: 1px solid var(--rule);
+    font-size: 13px;
+    padding: 13px 0;
+  }
+
+  .calc-label { color: var(--muted); }
+  .calc-value { color: var(--paper); white-space: nowrap; }
+  .calc-value.neg { color: var(--red); }
+  .calc-value.pos { color: var(--amber); font-weight: 500; }
+
+  .calc-divider {
+    background: var(--amber);
+    height: 1px;
+    margin: 10px 0;
+    opacity: 0.35;
+  }
+
+  .calc-total {
+    padding-top: 18px;
+  }
+
+  .calc-total .label {
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .calc-total .val {
+    color: var(--amber);
+    font-size: 28px;
+    font-weight: 500;
+  }
+
+  .who-grid {
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    display: grid;
+    gap: 1px;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 54px;
+  }
+
+  .who-card {
+    background: var(--ink);
+    min-height: 188px;
+    padding: 32px 26px;
+  }
+
+  .who-icon {
+    color: var(--amber);
+    font-family: "DM Mono", monospace;
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+
+  .cta-section {
+    overflow: hidden;
+    padding: 112px 0;
+    position: relative;
+    text-align: center;
+  }
+
+  .cta-section::before {
+    background: linear-gradient(90deg, transparent, rgba(212, 136, 42, 0.1), transparent);
+    content: "";
+    height: 1px;
+    left: 0;
+    position: absolute;
+    top: 50%;
+    width: 100%;
+  }
+
+  .cta-section .container--narrow {
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-eyebrow {
+    display: block;
+    margin-bottom: 24px;
+  }
+
+  .cta-headline {
+    font-size: clamp(36px, 6vw, 66px);
+    margin-bottom: 22px;
+  }
+
+  .cta-sub {
+    color: var(--paper-dim);
+    font-size: 17px;
+    line-height: 1.7;
+    margin: 0 auto 42px;
+    max-width: 540px;
+  }
+
+  .cta-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: center;
+  }
+
+  .cta-note {
+    color: var(--muted);
+    display: block;
+    font-family: "DM Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    margin-top: 18px;
+  }
+
+  footer {
+    border-top: 1px solid var(--rule);
+    padding: 32px 0;
+  }
+
+  footer .inner {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: space-between;
+    margin: 0 auto;
+    max-width: 1080px;
+    padding: 0 24px;
+  }
+
+  footer p {
+    color: var(--muted);
+    font-family: "DM Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  footer span { color: var(--amber); }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-in {
+    animation: fade-up 0.7s ease forwards;
+    opacity: 0;
+  }
+
+  .delay-1 { animation-delay: 0.12s; }
+  .delay-2 { animation-delay: 0.24s; }
+
+  @media (max-width: 920px) {
+    .pricing-grid,
+    .process-steps { grid-template-columns: 1fr 1fr; }
+    .price-card.featured { transform: none; }
+    .step { border-bottom: 1px solid var(--rule); border-right: none; padding: 30px 0; }
+    .step + .step { padding-left: 0; }
+    .step:nth-last-child(-n+2) { border-bottom: none; }
+  }
+
+  @media (max-width: 768px) {
+    .diagnosis-grid,
+    .protocol-grid,
+    .math-inner,
+    .pricing-grid,
+    .process-steps,
+    .who-grid { grid-template-columns: 1fr; }
+    .hero { padding: 62px 0 52px; }
+    .diagnosis,
+    .protocol,
+    .pricing,
+    .process,
+    .math,
+    .who { padding: 72px 0; }
+    .nav-links a:not(.nav-cta) { display: none; }
+    nav .inner { gap: 16px; }
+    .nav-logo { font-size: 10px; }
+    .nav-cta { font-size: 9px; padding: 9px 12px; }
+    .pricing-head { align-items: start; flex-direction: column; gap: 16px; }
+    .price-summary { min-height: auto; }
+    .step:nth-last-child(-n+2) { border-bottom: 1px solid var(--rule); }
+    .step:last-child { border-bottom: none; }
+    .cta-buttons { flex-direction: column; }
+    .btn-primary,
+    .btn-secondary,
+    .btn-large { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="inner">
+    <div class="nav-logo">GBP <span>Recovery</span> Audit</div>
+    <div class="nav-links">
+      <a href="#protocol">Protocol</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#cta" class="nav-cta">Choose Your Audit</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow">Google Business Profile Recovery</div>
+    <h1 class="display hero-headline fade-in">
+      Your phone got quieter.<br><em>We find out why.</em>
+    </h1>
+    <p class="hero-sub fade-in delay-1">
+      A severity-scored GBP audit built around the 2026 recovery protocol: keyword-stuffed names,
+      category gaps, stale activity, competitor movement, NAP confusion, and the post-August-2024
+      Diversity Update. Get the diagnosis only, the done-for-you recovery, or ongoing monthly maintenance.
+    </p>
+    <div class="hero-actions fade-in delay-2">
+      <a href="#pricing" class="btn-primary">See Pricing</a>
+      <a href="#protocol" class="btn-secondary">View The Protocol</a>
+      <span class="hero-proof">48-hour delivery starts after GBP Manager access is received. 5-issue guarantee on every tier.</span>
+    </div>
+  </div>
+</section>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-inner">
+    <div class="ticker-item">Keyword-stuffed name <span>*</span></div>
+    <div class="ticker-item">Wrong categories <span>*</span></div>
+    <div class="ticker-item">No posts in 90 days <span>*</span></div>
+    <div class="ticker-item">Unanswered reviews <span>*</span></div>
+    <div class="ticker-item">Stale photos <span>*</span></div>
+    <div class="ticker-item">NAP inconsistency <span>*</span></div>
+    <div class="ticker-item">Diversity Update check <span>*</span></div>
+    <div class="ticker-item">Competitor gap table <span>*</span></div>
+    <div class="ticker-item">Keyword-stuffed name <span>*</span></div>
+    <div class="ticker-item">Wrong categories <span>*</span></div>
+    <div class="ticker-item">No posts in 90 days <span>*</span></div>
+    <div class="ticker-item">Unanswered reviews <span>*</span></div>
+    <div class="ticker-item">Stale photos <span>*</span></div>
+    <div class="ticker-item">NAP inconsistency <span>*</span></div>
+    <div class="ticker-item">Diversity Update check <span>*</span></div>
+    <div class="ticker-item">Competitor gap table <span>*</span></div>
+  </div>
+</div>
+
+<section class="diagnosis">
+  <div class="container">
+    <div class="section-label">The Problem</div>
+    <div class="diagnosis-grid">
+      <div>
+        <h2 class="display">Your listing may look fine while Google quietly buries it.</h2>
+        <p class="lead">Most ranking drops are not caused by one dramatic failure. They come from several small signals stacking against you: a risky business name, a stale photo library, missing categories, weak Q&amp;A, review silence, or competitors becoming more active.</p>
+        <p class="lead">The audit is built to find the exact pattern. Every issue is scored High, Medium, or Low, then translated into an action plan you can use immediately.</p>
+      </div>
+      <div>
+        <div class="reason">
+          <div class="reason-num">High Severity</div>
+          <h3>Keyword-stuffed business names</h3>
+          <p>Since 2024, Google has been punishing names padded with city terms, service keywords, pipes, and slogans. If your name is stuffed, cleanup becomes the first fix.</p>
+        </div>
+        <div class="reason">
+          <div class="reason-num">High Severity</div>
+          <h3>Wrong primary category</h3>
+          <p>The primary category controls what searches your listing is eligible for. A broad or inaccurate category can suppress an otherwise healthy profile.</p>
+        </div>
+        <div class="reason">
+          <div class="reason-num">Medium Severity</div>
+          <h3>Photo, post, and Q&amp;A gaps</h3>
+          <p>Google rewards active listings. No posts in 90 days, old photos, and an empty Q&amp;A section all make the business look less current than competitors.</p>
+        </div>
+        <div class="reason">
+          <div class="reason-num">Medium Severity</div>
+          <h3>Diversity Update risk</h3>
+          <p>If the GBP links to the same page that ranks organically, Google may suppress one of those placements. We check for this before recommending a website-link change.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="protocol" id="protocol">
+  <div class="container">
+    <div class="section-label">The New Protocol</div>
+    <div class="protocol-grid">
+      <div class="protocol-card">
+        <div class="card-kicker">What happens in every audit</div>
+        <h2 class="display">Find the root cause before touching the listing.</h2>
+        <p class="lead">We start by pulling the live listing, the top three local-pack competitors, and the baseline signals before changes are made. The goal is not a generic SEO report. It is a ranked recovery plan.</p>
+        <ul class="protocol-list">
+          <li>Every issue logged and scored High, Medium, or Low.</li>
+          <li>Top three competitors checked against the same signals.</li>
+          <li>Business name, category, activity, NAP, and website-link risks reviewed.</li>
+          <li>Client deliverable includes the Loom, action plan, photo brief, post calendar, and review templates where included by tier.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="root-cause">
+          <div class="root-num">Root Cause 01</div>
+          <h3>Business name penalty</h3>
+          <p>A sudden drop often points to a stuffed GBP name. Any city, service term, descriptor, slogan, or separator gets flagged immediately.</p>
+        </div>
+        <div class="root-cause">
+          <div class="root-num">Root Cause 02</div>
+          <h3>Activity stagnation</h3>
+          <p>Gradual decline usually means the listing stopped posting, uploading photos, earning reviews, or answering questions while competitors stayed active.</p>
+        </div>
+        <div class="root-cause">
+          <div class="root-num">Root Cause 03</div>
+          <h3>Competitor improvement</h3>
+          <p>Sometimes your listing did not break. Someone else improved faster. The gap table shows exactly where they pulled ahead.</p>
+        </div>
+        <div class="root-cause">
+          <div class="root-num">Root Cause 04</div>
+          <h3>NAP or entity confusion</h3>
+          <p>Old addresses, tracking numbers, alternate names, and directory mismatches can make Google unsure which business entity to trust.</p>
+        </div>
+        <div class="root-cause">
+          <div class="root-num">Root Cause 05</div>
+          <h3>Diversity Update conflict</h3>
+          <p>Since August 2024, a strong GBP and organic result can conflict when both point to the same page. We check whether a secondary page would protect visibility.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pricing" id="pricing">
+  <div class="container">
+    <div class="pricing-head">
+      <div>
+        <div class="section-label">Choose Your Level</div>
+        <h2 class="display">Three ways to recover the listing.</h2>
+      </div>
+      <p>Start with the report if you have someone in-house. Choose the Recovery Audit if you want the diagnosis and the top fixes done for you. Add monthly maintenance when you want the listing managed continuously.</p>
+    </div>
+
+    <div class="pricing-grid">
+      <article class="price-card">
+        <div class="card-kicker">Tier 1</div>
+        <h3>Audit Report</h3>
+        <div class="price">$147</div>
+        <p class="price-summary">The full audit, documented and prioritized. Best for hands-on owners or teams who can make changes themselves.</p>
+        <ul class="feature-list">
+          <li>Full GBP audit and issue log</li>
+          <li>High / Medium / Low severity scoring</li>
+          <li>Loom walkthrough video</li>
+          <li>Written action plan document</li>
+          <li>5 specific issues or free</li>
+          <li class="no">No done-for-you fixes</li>
+          <li class="no">No 30-day check-in</li>
+        </ul>
+        <a href="mailto:hello@yourdomain.com?subject=GBP%20Audit%20Report%20-%20%24147" class="btn-secondary">Get The Report</a>
+        <p class="card-note">A lower-risk entry point that gives you the truth before you commit to fixes.</p>
+      </article>
+
+      <article class="price-card featured">
+        <div class="badge">Most Popular</div>
+        <div class="card-kicker">Tier 2</div>
+        <h3>Recovery Audit</h3>
+        <div class="price">$497</div>
+        <p class="price-summary">Everything in the report, plus the three highest-impact fixes made directly in your GBP.</p>
+        <ul class="feature-list">
+          <li>Full GBP audit and issue log</li>
+          <li>Loom walkthrough video</li>
+          <li>Written action plan document</li>
+          <li>Three done-for-you fixes</li>
+          <li>Post calendar and copy starters</li>
+          <li>Review response templates</li>
+          <li>Photo brief and upload plan</li>
+          <li>30-day performance check-in</li>
+          <li>5 specific issues or free</li>
+        </ul>
+        <a href="mailto:hello@yourdomain.com?subject=GBP%20Recovery%20Audit%20-%20%24497" class="btn-primary">Book Recovery Audit</a>
+        <p class="card-note">The core offer: diagnosis, fixes, deliverables, and one follow-up.</p>
+      </article>
+
+      <article class="price-card">
+        <div class="card-kicker">Tier 3</div>
+        <h3>Full Recovery + Maintenance</h3>
+        <div class="price">$497 <span>+ $297/mo</span></div>
+        <p class="price-summary">The Recovery Audit becomes onboarding, then monthly execution keeps the GBP active and defensible.</p>
+        <ul class="feature-list">
+          <li>Everything in the Recovery Audit</li>
+          <li>Weekly GBP posting</li>
+          <li>Monthly photo upload plan</li>
+          <li>Review monitoring and response</li>
+          <li>Quarterly re-audit</li>
+          <li>Monthly performance report</li>
+          <li>Retainer starts 30 days after audit</li>
+          <li>5 specific issues or free</li>
+        </ul>
+        <a href="mailto:hello@yourdomain.com?subject=GBP%20Full%20Recovery%20%2B%20Maintenance" class="btn-secondary">Start Full Recovery</a>
+        <p class="card-note">Best for higher-revenue businesses that want local search handled every month.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="process">
+  <div class="container">
+    <div class="section-label">How It Works</div>
+    <h2 class="display">The 48-hour clock starts when access is received.</h2>
+    <p class="lead">Manager access is required before the audit begins. If access is delayed, the audit pauses until access is granted.</p>
+    <div class="process-steps">
+      <div class="step">
+        <div class="step-num">00</div>
+        <div class="step-day">Access</div>
+        <h3>You book and add us as Manager.</h3>
+        <p>We request GBP Manager access immediately. Once access is received, the 48-hour turnaround begins.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-day">Day 1</div>
+        <h3>We audit and score everything.</h3>
+        <p>Business name, categories, competitors, photos, reviews, posts, Q&amp;A, NAP, website link, and Diversity Update risk are reviewed.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-day">Day 2</div>
+        <h3>You get the Loom and deliverables.</h3>
+        <p>Report clients receive the diagnosis. Recovery clients also get the top three fixes completed before delivery.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">30</div>
+        <div class="step-day">Day 30</div>
+        <h3>We check GBP performance.</h3>
+        <p>For Recovery Audit clients, we review impressions, direction requests, and website clicks, then flag what needs another pass.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="math">
+  <div class="container">
+    <div class="math-inner">
+      <div>
+        <div class="section-label">The Numbers</div>
+        <h2 class="display">A single recovered job can cover the audit.</h2>
+        <p class="lead">For trades, healthcare, wellness, legal, and local services, one ranking slot can be the difference between steady calls and a quiet week.</p>
+        <p class="lead">The $147 report gives you the map. The $497 Recovery Audit removes the highest-impact blockers. The $297 monthly option keeps the listing active after the first recovery pass.</p>
+      </div>
+      <div class="math-calc">
+        <div class="calc-row">
+          <span class="calc-label">Example average job value</span>
+          <span class="calc-value">$450</span>
+        </div>
+        <div class="calc-row">
+          <span class="calc-label">Lost calls per week</span>
+          <span class="calc-value neg">-5</span>
+        </div>
+        <div class="calc-row">
+          <span class="calc-label">Weekly revenue leaking</span>
+          <span class="calc-value neg">-$2,250</span>
+        </div>
+        <div class="calc-divider"></div>
+        <div class="calc-row">
+          <span class="calc-label">Audit Report</span>
+          <span class="calc-value">$147</span>
+        </div>
+        <div class="calc-row">
+          <span class="calc-label">Recovery Audit</span>
+          <span class="calc-value">$497</span>
+        </div>
+        <div class="calc-row">
+          <span class="calc-label">Maintenance retainer</span>
+          <span class="calc-value">$297/mo</span>
+        </div>
+        <div class="calc-total">
+          <span class="label">Payback after recovered work</span>
+          <span class="val">Fast</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="who">
+  <div class="container">
+    <div class="section-label">Who This Is For</div>
+    <h2 class="display">Built for local businesses where Google calls matter.</h2>
+    <div class="who-grid">
+      <div class="who-card">
+        <div class="who-icon">01</div>
+        <h3>Trades and home services</h3>
+        <p>Plumbers, HVAC, electricians, roofers, landscapers, auto repair, and any operator losing "near me" jobs.</p>
+      </div>
+      <div class="who-card">
+        <div class="who-icon">02</div>
+        <h3>Healthcare and wellness</h3>
+        <p>Dentists, chiropractors, med spas, therapists, and clinics where new patient volume depends on map visibility.</p>
+      </div>
+      <div class="who-card">
+        <div class="who-icon">03</div>
+        <h3>Professional services</h3>
+        <p>Attorneys, accountants, financial advisors, and local experts competing for high-intent searches.</p>
+      </div>
+      <div class="who-card">
+        <div class="who-icon">04</div>
+        <h3>Owner-led teams</h3>
+        <p>Choose the $147 report if you or your in-house person can execute the fixes after the audit.</p>
+      </div>
+      <div class="who-card">
+        <div class="who-icon">05</div>
+        <h3>Done-for-you buyers</h3>
+        <p>Choose the $497 Recovery Audit if you want the three highest-impact fixes handled directly.</p>
+      </div>
+      <div class="who-card">
+        <div class="who-icon">06</div>
+        <h3>Retainer-ready businesses</h3>
+        <p>Choose maintenance if you want posting, photo uploads, review response, and re-audits handled monthly.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section" id="cta">
+  <div class="container--narrow">
+    <div class="cta-eyebrow">Get Started</div>
+    <h2 class="display cta-headline">Pick the level that matches your team.</h2>
+    <p class="cta-sub">Start with the $147 report, book the $497 Recovery Audit, or use the audit as onboarding for $297/month GBP maintenance. Every tier is backed by the same promise: 5 specific issues or free.</p>
+    <div class="cta-buttons">
+      <a href="mailto:hello@yourdomain.com?subject=GBP%20Audit%20Report%20-%20%24147" class="btn-secondary">Audit Report - $147</a>
+      <a href="mailto:hello@yourdomain.com?subject=GBP%20Recovery%20Audit%20-%20%24497" class="btn-large">Recovery Audit - $497</a>
+      <a href="mailto:hello@yourdomain.com?subject=GBP%20Full%20Recovery%20%2B%20Maintenance" class="btn-secondary">Full Recovery + Monthly</a>
+    </div>
+    <span class="cta-note">Business-day replies within 2 hours. Audit starts after GBP Manager access is received.</span>
+  </div>
+</section>
+
+<footer>
+  <div class="inner">
+    <p>GBP <span>Recovery</span> Audit - Not affiliated with Google LLC</p>
+    <p>Results vary. Ranking improvements depend on competition, location, listing history, and client follow-through.</p>
+  </div>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = "1";
+        entry.target.style.transform = "translateY(0)";
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll(".reason, .root-cause, .price-card, .step, .who-card").forEach((el, i) => {
+    el.style.opacity = "0";
+    el.style.transform = "translateY(16px)";
+    el.style.transition = `opacity 0.5s ease ${Math.min(i * 0.04, 0.4)}s, transform 0.5s ease ${Math.min(i * 0.04, 0.4)}s`;
+    observer.observe(el);
+  });
+</script>
+</body>
+</html>
