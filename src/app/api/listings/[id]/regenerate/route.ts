@@ -7,6 +7,7 @@ import { regenerateSectionSchema } from "@/lib/validations/listing";
 import { regenerateListingSection } from "@/lib/ai/listing-generator";
 import { logAudit } from "@/lib/audit";
 import { getClientIp, rateLimit } from "@/lib/security/rate-limit";
+import { verifySameOrigin } from "@/lib/security/origin-check";
 import type { BrandProfileContext, ProductContext } from "@/lib/ai/prompts/listing-generator";
 
 interface RouteParams {
@@ -16,6 +17,10 @@ interface RouteParams {
 export async function POST(request: NextRequest, { params }: RouteParams) {
   const ctx = await requireTenant();
   if (!isTenantContext(ctx)) return ctx;
+
+  const originError = verifySameOrigin(request);
+  if (originError) return originError;
+
   const { id } = await params;
 
   const limit = rateLimit(`ai:listing-regenerate:${ctx.organizationId}`, 60, 60 * 60 * 1000);

@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { requireTenant, isTenantContext } from "@/lib/tenant";
 import { brandProfileInputSchema } from "@/lib/validations/brand";
 import { logAudit } from "@/lib/audit";
-import { getClientIp } from "@/lib/security/rate-limit";
+import { getClientIp, rateLimit } from "@/lib/security/rate-limit";
+import { verifySameOrigin } from "@/lib/security/origin-check";
 
 export async function GET() {
   const ctx = await requireTenant();
@@ -21,6 +22,17 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const ctx = await requireTenant();
   if (!isTenantContext(ctx)) return ctx;
+
+  const originError = verifySameOrigin(request);
+  if (originError) return originError;
+
+  const limit = rateLimit(`write:brand-profile:${ctx.organizationId}`, 60, 60 * 60 * 1000);
+  if (!limit.success) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 },
+    );
+  }
 
   const body = await request.json().catch(() => null);
   const parsed = brandProfileInputSchema.safeParse(body);

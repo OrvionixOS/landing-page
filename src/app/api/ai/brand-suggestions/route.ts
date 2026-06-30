@@ -4,10 +4,14 @@ import { requireTenant, isTenantContext } from "@/lib/tenant";
 import { brandBuilderInputSchema } from "@/lib/validations/brand";
 import { generateBrandSuggestions } from "@/lib/ai/brand-engine";
 import { rateLimit } from "@/lib/security/rate-limit";
+import { verifySameOrigin } from "@/lib/security/origin-check";
 
 export async function POST(request: NextRequest) {
   const ctx = await requireTenant();
   if (!isTenantContext(ctx)) return ctx;
+
+  const originError = verifySameOrigin(request);
+  if (originError) return originError;
 
   const limit = rateLimit(`ai:brand-suggestions:${ctx.organizationId}`, 10, 60 * 60 * 1000);
   if (!limit.success) {

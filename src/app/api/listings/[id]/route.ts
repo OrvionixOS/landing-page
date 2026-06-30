@@ -5,7 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { requireTenant, isTenantContext } from "@/lib/tenant";
 import { listingUpdateSchema } from "@/lib/validations/listing";
 import { logAudit } from "@/lib/audit";
-import { getClientIp } from "@/lib/security/rate-limit";
+import { getClientIp, rateLimit } from "@/lib/security/rate-limit";
+import { verifySameOrigin } from "@/lib/security/origin-check";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -30,6 +31,18 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const ctx = await requireTenant();
   if (!isTenantContext(ctx)) return ctx;
+
+  const originError = verifySameOrigin(request);
+  if (originError) return originError;
+
+  const limit = rateLimit(`write:listing:${ctx.organizationId}`, 120, 60 * 60 * 1000);
+  if (!limit.success) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 },
+    );
+  }
+
   const { id } = await params;
 
   const existing = await prisma.listing.findFirst({
@@ -68,6 +81,18 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const ctx = await requireTenant();
   if (!isTenantContext(ctx)) return ctx;
+
+  const originError = verifySameOrigin(request);
+  if (originError) return originError;
+
+  const limit = rateLimit(`write:listing:${ctx.organizationId}`, 120, 60 * 60 * 1000);
+  if (!limit.success) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 },
+    );
+  }
+
   const { id } = await params;
 
   const existing = await prisma.listing.findFirst({

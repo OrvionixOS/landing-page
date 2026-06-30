@@ -7,11 +7,15 @@ import { listingCreateSchema } from "@/lib/validations/listing";
 import { generateListing } from "@/lib/ai/listing-generator";
 import { logAudit } from "@/lib/audit";
 import { getClientIp, rateLimit } from "@/lib/security/rate-limit";
+import { verifySameOrigin } from "@/lib/security/origin-check";
 import type { BrandProfileContext, ProductContext } from "@/lib/ai/prompts/listing-generator";
 
 export async function POST(request: NextRequest) {
   const ctx = await requireTenant();
   if (!isTenantContext(ctx)) return ctx;
+
+  const originError = verifySameOrigin(request);
+  if (originError) return originError;
 
   const limit = rateLimit(`ai:listing-generate:${ctx.organizationId}`, 20, 60 * 60 * 1000);
   if (!limit.success) {
