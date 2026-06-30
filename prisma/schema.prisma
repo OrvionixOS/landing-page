@@ -30,6 +30,7 @@ model Organization {
   brandProfiles     BrandProfile[]
   products          Product[]
   listings          Listing[]
+  listingImages     ListingImage[]
   generationHistory GenerationHistory[]
   etsyConnection    EtsyConnection?
   subscription      Subscription?
@@ -209,6 +210,13 @@ enum ListingStatus {
   ARCHIVED
 }
 
+// Etsy's `who_made` enum (https://developers.etsy.com/documentation/reference/#operation/createDraftListing).
+enum EtsyWhoMade {
+  I_DID
+  SOMEONE_ELSE
+  COLLECTIVE
+}
+
 model Listing {
   id             String  @id @default(cuid())
   organizationId String
@@ -222,7 +230,7 @@ model Listing {
   // independently regenerable. See lib/ai/schemas.ts for the canonical shape.
   seoTitle           String? @db.Text
   tags               Json? // string[13]
-  taxonomyPath       String? // Etsy taxonomy lookup happens in Phase 2; freeform suggestion for now
+  taxonomyPath       String? // human-readable AI suggestion; not the numeric Etsy taxonomy id below
   attributes         Json?
   description        String? @db.Text
   imageShotList      Json? // [{ shot: string, purpose: string }]
@@ -234,9 +242,18 @@ model Listing {
   assumptions        Json? // string[]
 
   // Phase 2 (Etsy publishing) fields — present now so the schema does not
-  // need a breaking migration when publishing ships.
-  etsyListingId String?
-  publishedAt   DateTime?
+  // need a breaking migration when publishing ships. Populated from the
+  // seller's publish-settings form, sourced from the connected shop's real
+  // taxonomy/shipping/return-policy options rather than freeform input.
+  whoMade            EtsyWhoMade?
+  whenMade           String? // Etsy's when_made enum (e.g. "2020_2026", "made_to_order"); kept as a string since Etsy revises the bucket list over time
+  isSupply           Boolean?
+  quantity           Int?
+  taxonomyId         String? // numeric Etsy taxonomy node id, stored as string like the other Etsy ids on this schema
+  shippingProfileId  String?
+  returnPolicyId     String?
+  etsyListingId      String?
+  publishedAt        DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -246,11 +263,35 @@ model Listing {
   product           Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdBy         User?               @relation("ListingCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   generationHistory GenerationHistory[]
+  images            ListingImage[]
 
   @@index([organizationId])
   @@index([organizationId, status])
   @@index([organizationId, createdAt])
   @@map("listings")
+}
+
+// A listing image already uploaded to Etsy. Etsy hosts listing images
+// directly (POST /listings/{listing_id}/images), so there is no local/cloud
+// object storage layer on our side — a row only exists here once the upload
+// to Etsy has succeeded.
+model ListingImage {
+  id             String @id @default(cuid())
+  organizationId String
+  listingId      String
+
+  etsyImageId String // id Etsy assigned to the uploaded image
+  url         String // Etsy-hosted CDN url returned by the upload
+  rank        Int    @default(0)
+
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  listing      Listing      @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([listingId])
+  @@map("listing_images")
 }
 
 // ---------------------------------------------------------------------------
@@ -309,6 +350,7 @@ model EtsyConnection {
   organizationId String @unique
 
   etsyShopId            String?
+  etsyShopName          String?
   etsyUserId            String?
   accessTokenEncrypted  String?              @db.Text // AES-256-GCM ciphertext, see lib/security/encryption.ts
   refreshTokenEncrypted String?              @db.Text

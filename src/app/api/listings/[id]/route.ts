@@ -19,7 +19,11 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
   const listing = await prisma.listing.findFirst({
     where: { id, organizationId: ctx.organizationId },
-    include: { product: true, brandProfile: { select: { id: true, name: true } } },
+    include: {
+      product: true,
+      brandProfile: { select: { id: true, name: true } },
+      images: { orderBy: { rank: "asc" } },
+    },
   });
   if (!listing) {
     return NextResponse.json({ error: "Listing not found" }, { status: 404 });

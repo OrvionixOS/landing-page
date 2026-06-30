@@ -10,6 +10,7 @@ import { Input, Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert } from "@/components/ui/alert";
 import { formatDate } from "@/lib/utils";
+import { EtsyPublishCard } from "./etsy-publish-card";
 
 export interface ImageShot {
   shot: string;
@@ -85,9 +86,22 @@ interface ListingDetailProps {
   initialData: EditableListingData;
   assumptions: string[];
   meta: { brandName: string; productName: string; createdAt: string };
+  etsyConnected: boolean;
+  published: { etsyListingId: string; publishedAt: string } | null;
+  images: { id: string; url: string }[];
+  suggestedPrice: number;
 }
 
-export function ListingDetail({ listingId, initialData, assumptions, meta }: ListingDetailProps) {
+export function ListingDetail({
+  listingId,
+  initialData,
+  assumptions,
+  meta,
+  etsyConnected,
+  published,
+  images,
+  suggestedPrice,
+}: ListingDetailProps) {
   const router = useRouter();
   const [data, setData] = useState<EditableListingData>(initialData);
   const [isSaving, setIsSaving] = useState(false);
@@ -467,6 +481,14 @@ export function ListingDetail({ listingId, initialData, assumptions, meta }: Lis
           <Textarea rows={3} value={data.instagramCopy} onChange={(e) => set("instagramCopy", e.target.value)} />
         </CardContent>
       </Card>
+
+      <EtsyPublishCard
+        listingId={listingId}
+        etsyConnected={etsyConnected}
+        published={published}
+        images={images}
+        suggestedPrice={suggestedPrice}
+      />
 
       <div className="sticky bottom-0 flex flex-col gap-3 border-t border-border bg-background py-4">
         {saveError && <Alert variant="danger">{saveError}</Alert>}

@@ -13,10 +13,20 @@ export default async function ListingDetailPage({ params }: PageProps) {
   const ctx = await requireTenantOrRedirect();
   const { id } = await params;
 
-  const listing = await prisma.listing.findFirst({
-    where: { id, organizationId: ctx.organizationId },
-    include: { product: { select: { name: true } }, brandProfile: { select: { name: true } } },
-  });
+  const [listing, etsyConnection] = await Promise.all([
+    prisma.listing.findFirst({
+      where: { id, organizationId: ctx.organizationId },
+      include: {
+        product: { select: { name: true } },
+        brandProfile: { select: { name: true } },
+        images: { orderBy: { rank: "asc" }, select: { id: true, url: true } },
+      },
+    }),
+    prisma.etsyConnection.findUnique({
+      where: { organizationId: ctx.organizationId },
+      select: { status: true },
+    }),
+  ]);
 
   if (!listing) notFound();
 
@@ -52,6 +62,14 @@ export default async function ListingDetailPage({ params }: PageProps) {
         productName: listing.product.name,
         createdAt: listing.createdAt.toISOString(),
       }}
+      etsyConnected={etsyConnection?.status === "CONNECTED"}
+      published={
+        listing.etsyListingId && listing.publishedAt
+          ? { etsyListingId: listing.etsyListingId, publishedAt: listing.publishedAt.toISOString() }
+          : null
+      }
+      images={listing.images}
+      suggestedPrice={data.pricingGuidance.suggestedPrice}
     />
   );
 }
