@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ListingStudio
 
-## Getting Started
+An AI-powered Etsy listing platform for sellers. ListingStudio's **Brand
+Engine** is the core differentiator: every AI-generated title, description,
+tag set, and caption flows through a saved brand profile, so output stays
+consistent with a seller's voice instead of reading like generic AI copy.
 
-First, run the development server:
+See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the system design, data
+model, multi-tenancy strategy, AI service layer, and security model.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Getting started
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. Copy `.env.example` to `.env` (if present) or set the required
+   environment variables directly: `DATABASE_URL` (PostgreSQL),
+   `ANTHROPIC_API_KEY`, and the NextAuth secret/URL variables.
+2. Install dependencies and apply migrations:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+   ```bash
+   npm install
+   npx prisma migrate deploy
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Run the dev server:
 
-## Learn More
+   ```bash
+   npm run dev
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+   Open [http://localhost:3000](http://localhost:3000).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `npm run dev` — start the Next.js dev server (Turbopack).
+- `npm run build` — production build.
+- `npm run start` — run a production build.
+- `npm run lint` — ESLint.
+- `npx tsc --noEmit` — type-check without emitting output.
+- `npx prisma studio` — browse the database.
 
-## Deploy on Vercel
+## Project layout
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/app/(app)/` — authenticated product pages (dashboard, Brand Engine,
+  listings), gated by the layout's session check.
+- `src/app/api/` — Route Handlers; every tenant-scoped route starts with
+  `requireTenant()`.
+- `src/app/auth/` — sign-in / sign-up pages.
+- `src/lib/` — server-only application logic: auth config, multi-tenancy
+  guards, the AI service layer, security helpers, and Zod validation
+  schemas.
+- `prisma/schema.prisma` — the data model, annotated with the tenancy
+  strategy and which models are reserved for later phases.
