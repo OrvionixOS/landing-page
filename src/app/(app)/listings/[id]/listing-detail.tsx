@@ -53,6 +53,33 @@ type RegenerableSection =
 
 const STATUS_OPTIONS: ListingStatus[] = ["DRAFT", "READY", "ARCHIVED"];
 
+interface SectionHeaderProps {
+  label: string;
+  instruction: string;
+  onInstructionChange: (value: string) => void;
+  isRegenerating: boolean;
+  onRegenerate: () => void;
+}
+
+function SectionHeader({ label, instruction, onInstructionChange, isRegenerating, onRegenerate }: SectionHeaderProps) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <Label>{label}</Label>
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Instruction (optional)"
+          value={instruction}
+          onChange={(e) => onInstructionChange(e.target.value)}
+          className="h-8 w-56 text-xs"
+        />
+        <Button type="button" variant="secondary" size="sm" isLoading={isRegenerating} onClick={onRegenerate}>
+          <Sparkles className="h-3.5 w-3.5" /> Regenerate
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 interface ListingDetailProps {
   listingId: string;
   initialData: EditableListingData;
@@ -172,29 +199,14 @@ export function ListingDetail({ listingId, initialData, assumptions, meta }: Lis
     set("imageShotList", data.imageShotList.filter((_, i) => i !== index));
   }
 
-  function SectionHeader({ label, section }: { label: string; section: RegenerableSection }) {
-    return (
-      <div className="flex items-center justify-between gap-3">
-        <Label>{label}</Label>
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder="Instruction (optional)"
-            value={instructions[section] ?? ""}
-            onChange={(e) => setInstructions((prev) => ({ ...prev, [section]: e.target.value }))}
-            className="h-8 w-56 text-xs"
-          />
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            isLoading={regenerating === section}
-            onClick={() => handleRegenerate(section)}
-          >
-            <Sparkles className="h-3.5 w-3.5" /> Regenerate
-          </Button>
-        </div>
-      </div>
-    );
+  function sectionHeaderProps(label: string, section: RegenerableSection): SectionHeaderProps {
+    return {
+      label,
+      instruction: instructions[section] ?? "",
+      onInstructionChange: (value) => setInstructions((prev) => ({ ...prev, [section]: value })),
+      isRegenerating: regenerating === section,
+      onRegenerate: () => handleRegenerate(section),
+    };
   }
 
   return (
@@ -236,7 +248,7 @@ export function ListingDetail({ listingId, initialData, assumptions, meta }: Lis
 
       <Card>
         <CardHeader>
-          <SectionHeader label="SEO title" section="seoTitle" />
+          <SectionHeader {...sectionHeaderProps("SEO title", "seoTitle")} />
           <CardDescription>{data.seoTitle.length}/140 characters</CardDescription>
         </CardHeader>
         <CardContent>
@@ -246,7 +258,7 @@ export function ListingDetail({ listingId, initialData, assumptions, meta }: Lis
 
       <Card>
         <CardHeader>
-          <SectionHeader label="Tags (13)" section="tags" />
+          <SectionHeader {...sectionHeaderProps("Tags (13)", "tags")} />
         </CardHeader>
         <CardContent className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {data.tags.map((tag, i) => (
@@ -300,7 +312,7 @@ export function ListingDetail({ listingId, initialData, assumptions, meta }: Lis
 
       <Card>
         <CardHeader>
-          <SectionHeader label="Description" section="description" />
+          <SectionHeader {...sectionHeaderProps("Description", "description")} />
         </CardHeader>
         <CardContent>
           <Textarea
@@ -314,7 +326,7 @@ export function ListingDetail({ listingId, initialData, assumptions, meta }: Lis
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-3">
-            <SectionHeader label="Image shot list" section="imageShotList" />
+            <SectionHeader {...sectionHeaderProps("Image shot list", "imageShotList")} />
           </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
@@ -357,7 +369,7 @@ export function ListingDetail({ listingId, initialData, assumptions, meta }: Lis
 
       <Card>
         <CardHeader>
-          <SectionHeader label="Video concept" section="videoConcept" />
+          <SectionHeader {...sectionHeaderProps("Video concept", "videoConcept")} />
         </CardHeader>
         <CardContent>
           <Textarea rows={2} value={data.videoConcept} onChange={(e) => set("videoConcept", e.target.value)} />
@@ -366,7 +378,7 @@ export function ListingDetail({ listingId, initialData, assumptions, meta }: Lis
 
       <Card>
         <CardHeader>
-          <SectionHeader label="Hero image direction" section="heroImageDirection" />
+          <SectionHeader {...sectionHeaderProps("Hero image direction", "heroImageDirection")} />
         </CardHeader>
         <CardContent>
           <Textarea
@@ -379,7 +391,7 @@ export function ListingDetail({ listingId, initialData, assumptions, meta }: Lis
 
       <Card>
         <CardHeader>
-          <SectionHeader label="Pricing guidance" section="pricingGuidance" />
+          <SectionHeader {...sectionHeaderProps("Pricing guidance", "pricingGuidance")} />
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <div className="grid grid-cols-3 gap-3">
@@ -440,7 +452,7 @@ export function ListingDetail({ listingId, initialData, assumptions, meta }: Lis
 
       <Card>
         <CardHeader>
-          <SectionHeader label="Pinterest caption" section="pinterestCopy" />
+          <SectionHeader {...sectionHeaderProps("Pinterest caption", "pinterestCopy")} />
         </CardHeader>
         <CardContent>
           <Textarea rows={3} value={data.pinterestCopy} onChange={(e) => set("pinterestCopy", e.target.value)} />
@@ -449,7 +461,7 @@ export function ListingDetail({ listingId, initialData, assumptions, meta }: Lis
 
       <Card>
         <CardHeader>
-          <SectionHeader label="Instagram caption" section="instagramCopy" />
+          <SectionHeader {...sectionHeaderProps("Instagram caption", "instagramCopy")} />
         </CardHeader>
         <CardContent>
           <Textarea rows={3} value={data.instagramCopy} onChange={(e) => set("instagramCopy", e.target.value)} />

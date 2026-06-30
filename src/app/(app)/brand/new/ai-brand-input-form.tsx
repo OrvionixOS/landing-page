@@ -88,7 +88,7 @@ export function AiBrandInputForm({ onGenerated }: AiBrandInputFormProps) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="targetAudience">Who's it for? (optional)</Label>
+        <Label htmlFor="targetAudience">Who&apos;s it for? (optional)</Label>
         <Input
           id="targetAudience"
           placeholder="e.g. People who love slow, intentional home design"
