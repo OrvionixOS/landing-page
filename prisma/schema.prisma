@@ -1,0 +1,451 @@
+// ListingStudio — Prisma schema
+//
+// Multi-tenant data model. "Organization" is the tenant boundary: every
+// tenant-owned row carries an `organizationId` foreign key and all
+// application queries MUST be scoped through lib/tenant.ts rather than
+// querying these models directly. See ARCHITECTURE.md for the tenancy
+// strategy (shared database, shared schema, row-level scoping).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity & tenancy
+// ---------------------------------------------------------------------------
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships       Membership[]
+  brandProfiles     BrandProfile[]
+  products          Product[]
+  listings          Listing[]
+  listingImages     ListingImage[]
+  generationHistory GenerationHistory[]
+  etsyConnection    EtsyConnection?
+  subscription      Subscription?
+  usageRecords      Usage[]
+  auditLogs         AuditLog[]
+
+  @@map("organizations")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model Membership {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  role           Role     @default(OWNER)
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@map("memberships")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  memberships       Membership[]
+  accounts          Account[]
+  sessions          Session[]
+  listingsCreated   Listing[]           @relation("ListingCreatedBy")
+  brandsCreated     BrandProfile[]      @relation("BrandCreatedBy")
+  generationHistory GenerationHistory[]
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+// --- NextAuth (Auth.js) Prisma adapter models ---------------------------
+// Kept standard-shape so the adapter and any future OAuth providers
+// (Phase 4: Google / Etsy account linking) work without migration churn.
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Brand Engine
+// ---------------------------------------------------------------------------
+
+enum BrandOrigin {
+  EXISTING
+  AI_GENERATED
+}
+
+enum BrandStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+model BrandProfile {
+  id             String  @id @default(cuid())
+  organizationId String
+  createdById    String?
+
+  name            String
+  tagline         String?
+  positioning     String? @db.Text
+  voice           String? @db.Text
+  targetCustomer  String? @db.Text
+  visualDirection String? @db.Text
+  palette         Json? // [{ name: string, hex: string, usage: string }]
+  typography      Json? // { heading: string, body: string, accent?: string, rationale?: string }
+
+  origin      BrandOrigin @default(EXISTING)
+  status      BrandStatus @default(ACTIVE)
+  assumptions Json? // string[] — assumptions the AI flagged instead of inventing facts
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization      Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy         User?               @relation("BrandCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  products          Product[]
+  listings          Listing[]
+  generationHistory GenerationHistory[]
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@map("brand_profiles")
+}
+
+// ---------------------------------------------------------------------------
+// Products & Listings
+// ---------------------------------------------------------------------------
+
+model Product {
+  id             String  @id @default(cuid())
+  organizationId String
+  brandProfileId String?
+
+  name          String
+  category      String?
+  materials     String?  @db.Text
+  description   String?  @db.Text
+  keyFeatures   Json? // string[]
+  priceRangeMin Decimal? @db.Decimal(10, 2)
+  priceRangeMax Decimal? @db.Decimal(10, 2)
+  attributes    Json? // free-form seller-supplied facts used as AI grounding
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  brandProfile BrandProfile? @relation(fields: [brandProfileId], references: [id], onDelete: SetNull)
+  listings     Listing[]
+
+  @@index([organizationId])
+  @@map("products")
+}
+
+enum ListingStatus {
+  DRAFT
+  READY
+  PUBLISHED
+  ARCHIVED
+}
+
+// Etsy's `who_made` enum (https://developers.etsy.com/documentation/reference/#operation/createDraftListing).
+enum EtsyWhoMade {
+  I_DID
+  SOMEONE_ELSE
+  COLLECTIVE
+}
+
+model Listing {
+  id             String  @id @default(cuid())
+  organizationId String
+  brandProfileId String
+  productId      String
+  createdById    String?
+
+  status ListingStatus @default(DRAFT)
+
+  // Structured generated content — every field independently editable and
+  // independently regenerable. See lib/ai/schemas.ts for the canonical shape.
+  seoTitle           String? @db.Text
+  tags               Json? // string[13]
+  taxonomyPath       String? // human-readable AI suggestion; not the numeric Etsy taxonomy id below
+  attributes         Json?
+  description        String? @db.Text
+  imageShotList      Json? // [{ shot: string, purpose: string }]
+  videoConcept       String? @db.Text
+  heroImageDirection String? @db.Text
+  pricingGuidance    Json? // { suggestedPrice, minPrice, maxPrice, rationale }
+  pinterestCopy      String? @db.Text
+  instagramCopy      String? @db.Text
+  assumptions        Json? // string[]
+
+  // Phase 2 (Etsy publishing) fields — present now so the schema does not
+  // need a breaking migration when publishing ships. Populated from the
+  // seller's publish-settings form, sourced from the connected shop's real
+  // taxonomy/shipping/return-policy options rather than freeform input.
+  whoMade            EtsyWhoMade?
+  whenMade           String? // Etsy's when_made enum (e.g. "2020_2026", "made_to_order"); kept as a string since Etsy revises the bucket list over time
+  isSupply           Boolean?
+  quantity           Int?
+  taxonomyId         String? // numeric Etsy taxonomy node id, stored as string like the other Etsy ids on this schema
+  shippingProfileId  String?
+  returnPolicyId     String?
+  etsyListingId      String?
+  publishedAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization      Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  brandProfile      BrandProfile        @relation(fields: [brandProfileId], references: [id], onDelete: Restrict)
+  product           Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdBy         User?               @relation("ListingCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  generationHistory GenerationHistory[]
+  images            ListingImage[]
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, createdAt])
+  @@map("listings")
+}
+
+// A listing image already uploaded to Etsy. Etsy hosts listing images
+// directly (POST /listings/{listing_id}/images), so there is no local/cloud
+// object storage layer on our side — a row only exists here once the upload
+// to Etsy has succeeded.
+model ListingImage {
+  id             String @id @default(cuid())
+  organizationId String
+  listingId      String
+
+  etsyImageId String // id Etsy assigned to the uploaded image
+  url         String // Etsy-hosted CDN url returned by the upload
+  rank        Int    @default(0)
+
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  listing      Listing      @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([listingId])
+  @@map("listing_images")
+}
+
+// ---------------------------------------------------------------------------
+// AI generation audit trail (cost + quality observability)
+// ---------------------------------------------------------------------------
+
+enum GenerationType {
+  BRAND_SUGGESTIONS
+  LISTING_FULL
+  LISTING_SECTION
+}
+
+model GenerationHistory {
+  id             String  @id @default(cuid())
+  organizationId String
+  listingId      String?
+  brandProfileId String?
+  createdById    String?
+
+  type          GenerationType
+  model         String // e.g. "claude-sonnet-4-6"
+  section       String? // populated for LISTING_SECTION regenerations
+  inputSummary  Json // sanitized prompt context, never raw secrets
+  outputSummary Json
+  tokensInput   Int?
+  tokensOutput  Int?
+  costUsdMicros Int? // cost stored as micros (1e-6 USD) to avoid float drift
+  succeeded     Boolean        @default(true)
+  errorMessage  String?
+
+  createdAt DateTime @default(now())
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  listing      Listing?      @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  brandProfile BrandProfile? @relation(fields: [brandProfileId], references: [id], onDelete: SetNull)
+  createdBy    User?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([organizationId, createdAt])
+  @@map("generation_history")
+}
+
+// ---------------------------------------------------------------------------
+// Etsy integration (Phase 2 — modeled now, not wired up yet)
+// ---------------------------------------------------------------------------
+
+enum EtsyConnectionStatus {
+  CONNECTED
+  EXPIRED
+  REVOKED
+  ERROR
+}
+
+model EtsyConnection {
+  id             String @id @default(cuid())
+  organizationId String @unique
+
+  etsyShopId            String?
+  etsyShopName          String?
+  etsyUserId            String?
+  accessTokenEncrypted  String?              @db.Text // AES-256-GCM ciphertext, see lib/security/encryption.ts
+  refreshTokenEncrypted String?              @db.Text
+  scope                 String?
+  tokenExpiresAt        DateTime?
+  status                EtsyConnectionStatus @default(CONNECTED)
+  lastError             String?
+
+  connectedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("etsy_connections")
+}
+
+// ---------------------------------------------------------------------------
+// Billing (Phase 3 — modeled now, not wired up yet)
+// ---------------------------------------------------------------------------
+
+enum SubscriptionPlan {
+  FREE_TRIAL
+  STARTER
+  PRO
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
+model Subscription {
+  id             String @id @default(cuid())
+  organizationId String @unique
+
+  plan   SubscriptionPlan   @default(FREE_TRIAL)
+  status SubscriptionStatus @default(TRIALING)
+
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  currentPeriodEnd     DateTime?
+  trialEndsAt          DateTime?
+
+  generationLimit Int @default(20)
+  publishLimit    Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model Usage {
+  id             String @id @default(cuid())
+  organizationId String
+
+  period          String // "YYYY-MM"
+  generationsUsed Int    @default(0)
+  publishesUsed   Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, period])
+  @@map("usage_records")
+}
+
+// ---------------------------------------------------------------------------
+// Audit log
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id             String  @id @default(cuid())
+  organizationId String
+  userId         String?
+
+  action     String // e.g. "brand_profile.created"
+  entityType String // e.g. "BrandProfile"
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([organizationId, createdAt])
+  @@map("audit_logs")
+}
