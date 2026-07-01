@@ -42,8 +42,11 @@ export function SignUpForm() {
 
     setIsSubmitting(false);
 
-    if (result?.error) {
-      router.push("/auth/sign-in");
+    if (!result || result.error) {
+      setError(
+        "Account created! We couldn't sign you in automatically — please sign in below.",
+      );
+      router.push("/auth/sign-in?registered=1");
       return;
     }
 

@@ -14,6 +14,8 @@ export function SignInForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
+  const registered = searchParams.get("registered") === "1";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +45,9 @@ export function SignInForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+      {registered && !error && (
+        <Alert variant="success">Account created! Sign in with your new credentials.</Alert>
+      )}
       {error && <Alert variant="danger">{error}</Alert>}
 
       <div className="flex flex-col gap-1.5">
