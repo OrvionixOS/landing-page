@@ -10,7 +10,7 @@ import { Input, Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert } from "@/components/ui/alert";
 import { formatDate } from "@/lib/utils";
-import { EtsyPublishCard } from "./etsy-publish-card";
+import { EtsyCopyPanel } from "./etsy-copy-panel";
 
 export interface ImageShot {
   shot: string;
@@ -86,22 +86,9 @@ interface ListingDetailProps {
   initialData: EditableListingData;
   assumptions: string[];
   meta: { brandName: string; productName: string; createdAt: string };
-  etsyConnected: boolean;
-  published: { etsyListingId: string; publishedAt: string } | null;
-  images: { id: string; url: string }[];
-  suggestedPrice: number;
 }
 
-export function ListingDetail({
-  listingId,
-  initialData,
-  assumptions,
-  meta,
-  etsyConnected,
-  published,
-  images,
-  suggestedPrice,
-}: ListingDetailProps) {
+export function ListingDetail({ listingId, initialData, assumptions, meta }: ListingDetailProps) {
   const router = useRouter();
   const [data, setData] = useState<EditableListingData>(initialData);
   const [isSaving, setIsSaving] = useState(false);
@@ -482,12 +469,12 @@ export function ListingDetail({
         </CardContent>
       </Card>
 
-      <EtsyPublishCard
-        listingId={listingId}
-        etsyConnected={etsyConnected}
-        published={published}
-        images={images}
-        suggestedPrice={suggestedPrice}
+      <EtsyCopyPanel
+        seoTitle={data.seoTitle}
+        description={data.description}
+        tags={data.tags}
+        suggestedPrice={data.pricingGuidance.suggestedPrice}
+        taxonomyPath={data.taxonomyPath}
       />
 
       <div className="sticky bottom-0 flex flex-col gap-3 border-t border-border bg-background py-4">
