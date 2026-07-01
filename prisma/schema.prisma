@@ -240,6 +240,7 @@ model Listing {
   pinterestCopy      String? @db.Text
   instagramCopy      String? @db.Text
   assumptions        Json? // string[]
+  imageBlueprintData Json? // ImageBlueprint (see src/lib/validations/image-blueprint.ts)
 
   // Phase 2 (Etsy publishing) fields — present now so the schema does not
   // need a breaking migration when publishing ships. Populated from the
@@ -302,6 +303,7 @@ enum GenerationType {
   BRAND_SUGGESTIONS
   LISTING_FULL
   LISTING_SECTION
+  IMAGE_BLUEPRINT
 }
 
 model GenerationHistory {

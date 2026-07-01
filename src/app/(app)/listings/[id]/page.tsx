@@ -4,6 +4,7 @@ import { requireTenantOrRedirect } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { ListingDetail } from "./listing-detail";
 import type { EditableListingData } from "./listing-detail";
+import type { ImageBlueprint } from "@/lib/validations/image-blueprint";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -44,6 +45,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
   };
 
   const assumptions = (listing.assumptions as unknown as string[]) ?? [];
+  const initialBlueprint = (listing.imageBlueprintData as unknown as ImageBlueprint) ?? null;
 
   return (
     <ListingDetail
@@ -55,6 +57,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
         productName: listing.product.name,
         createdAt: listing.createdAt.toISOString(),
       }}
+      initialBlueprint={initialBlueprint}
     />
   );
 }

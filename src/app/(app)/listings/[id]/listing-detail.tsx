@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Alert } from "@/components/ui/alert";
 import { formatDate } from "@/lib/utils";
 import { EtsyCopyPanel } from "./etsy-copy-panel";
+import { ImageBlueprintCard } from "./image-blueprint-card";
+import type { ImageBlueprint } from "@/lib/validations/image-blueprint";
 
 export interface ImageShot {
   shot: string;
@@ -86,9 +88,10 @@ interface ListingDetailProps {
   initialData: EditableListingData;
   assumptions: string[];
   meta: { brandName: string; productName: string; createdAt: string };
+  initialBlueprint: ImageBlueprint | null;
 }
 
-export function ListingDetail({ listingId, initialData, assumptions, meta }: ListingDetailProps) {
+export function ListingDetail({ listingId, initialData, assumptions, meta, initialBlueprint }: ListingDetailProps) {
   const router = useRouter();
   const [data, setData] = useState<EditableListingData>(initialData);
   const [isSaving, setIsSaving] = useState(false);
@@ -468,6 +471,12 @@ export function ListingDetail({ listingId, initialData, assumptions, meta }: Lis
           <Textarea rows={3} value={data.instagramCopy} onChange={(e) => set("instagramCopy", e.target.value)} />
         </CardContent>
       </Card>
+
+      <ImageBlueprintCard
+        listingId={listingId}
+        initialBlueprint={initialBlueprint}
+        hasContent={Boolean(data.seoTitle && data.description)}
+      />
 
       <EtsyCopyPanel
         seoTitle={data.seoTitle}
